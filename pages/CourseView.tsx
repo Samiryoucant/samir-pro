@@ -32,10 +32,27 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
   // Gallery
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  const isDark = theme === 'dark';
   const isPizza = theme === 'pizza';
-  const brandColor = isPizza ? 'text-pizza-600' : 'text-lemon-600';
-  const btnPrimary = `px-6 py-3 rounded-xl font-bold text-white shadow-lg transition active:scale-95 ${isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700'}`;
-  const btnSecondary = `px-6 py-3 rounded-xl font-bold border-2 transition active:scale-95 ${isPizza ? 'border-pizza-200 text-pizza-700 hover:bg-pizza-50' : 'border-lemon-200 text-lemon-700 hover:bg-lemon-50'}`;
+  
+  const brandColor = isDark 
+    ? 'text-indigo-400' 
+    : (isPizza ? 'text-pizza-600' : 'text-lemon-600');
+    
+  const btnPrimary = `px-6 py-3 rounded-xl font-bold text-white shadow-lg transition active:scale-95 ${
+    isDark 
+      ? 'bg-indigo-600 hover:bg-indigo-700' 
+      : (isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700')
+  }`;
+  
+  const btnSecondary = `px-6 py-3 rounded-xl font-bold border-2 transition active:scale-95 ${
+    isDark
+      ? 'border-slate-600 text-slate-300 hover:bg-slate-700'
+      : (isPizza ? 'border-pizza-200 text-pizza-700 hover:bg-pizza-50' : 'border-lemon-200 text-lemon-700 hover:bg-lemon-50')
+  }`;
+  
+  const cardClass = isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100';
+  const textMuted = isDark ? 'text-slate-400' : 'text-gray-500';
 
   useEffect(() => {
     const c = db.courses.all().find(x => x.id === courseId);
@@ -69,12 +86,10 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
         showToast("Ad watched successfully! (+1)", "success");
       }).catch((e) => {
         console.error("Ad error or closed, using simulation fallback:", e);
-        // Fallback to manual timer if ad fails to load or closes unexpectedly
         startManualTimer();
       });
     } else {
       console.warn("Monetag SDK not found, falling back to simulation.");
-      // Fallback for dev environment or adblock
       startManualTimer();
     }
   };
@@ -130,7 +145,6 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
     });
 
     if (file.sourceType === 'upload' && file.url.startsWith('blob:')) {
-      // Local blob URL (session only)
       const a = document.createElement("a");
       a.href = file.url;
       a.download = file.name;
@@ -138,7 +152,6 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
       a.click();
       document.body.removeChild(a);
     } else if (file.url === '#' || !file.url) {
-      // Create a dummy file for demo if no real URL
       const blob = new Blob(["This is the demo content of " + file.name], { type: "text/plain" });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -149,7 +162,6 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } else {
-      // External Link
       window.open(file.url, '_blank');
     }
   };
@@ -187,14 +199,14 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
   return (
     <div>
       {/* Header */}
-      <button onClick={onBack} className="mb-6 flex items-center gap-2 text-gray-500 hover:text-gray-900 transition">
+      <button onClick={onBack} className={`mb-6 flex items-center gap-2 transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-gray-500 hover:text-gray-900'}`}>
         <ArrowLeft size={20} /> Back to Courses
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-8">
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 group relative">
+          <div className={`rounded-2xl overflow-hidden shadow-sm border group relative ${cardClass}`}>
              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
              <img src={course.banner || course.thumbnail} className="w-full h-64 md:h-80 object-cover" alt="Course Banner" />
              <div className="absolute bottom-0 left-0 p-8 z-20 text-white">
@@ -205,9 +217,9 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
 
           {/* Sample Images Gallery */}
           {course.sampleImages && course.sampleImages.length > 0 && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className={`rounded-2xl shadow-sm border p-8 ${cardClass}`}>
                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                 <ImageIcon size={20} className="text-gray-400"/> Preview Gallery
+                 <ImageIcon size={20} className={isDark ? 'text-slate-500' : 'text-gray-400'}/> Preview Gallery
                </h3>
                <div className="flex gap-4 overflow-x-auto pb-2">
                  {course.sampleImages.map((img, idx) => (
@@ -215,7 +227,7 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                     key={idx} 
                     src={img} 
                     onClick={() => setSelectedImage(img)}
-                    className="w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition border"
+                    className={`w-32 h-32 object-cover rounded-lg cursor-pointer hover:opacity-80 transition border ${isDark ? 'border-slate-600' : ''}`}
                    />
                  ))}
                </div>
@@ -223,8 +235,8 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
           )}
 
           {/* Files Section (Only if Owned) */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
+          <div className={`rounded-2xl shadow-sm border p-8 ${cardClass}`}>
+             <h2 className={`text-xl font-bold mb-6 flex items-center gap-2 ${isDark ? 'text-white' : ''}`}>
                <Download className={brandColor} /> Course Content
              </h2>
              
@@ -232,19 +244,27 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                <div className="space-y-3">
                  {course.files.length === 0 && <p className="text-gray-400 italic">No files available yet.</p>}
                  {course.files.map(f => (
-                   <div key={f.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                   <div key={f.id} className={`flex items-center justify-between p-4 rounded-xl hover:bg-opacity-80 transition ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${isPizza ? 'bg-orange-100 text-orange-600' : 'bg-lime-100 text-lime-600'}`}>
+                        <div className={`p-2 rounded-lg ${
+                            isDark 
+                             ? 'bg-slate-700 text-slate-200'
+                             : (isPizza ? 'bg-orange-100 text-orange-600' : 'bg-lime-100 text-lime-600')
+                        }`}>
                           {f.type === 'video' ? 'MP4' : f.type === 'pdf' ? 'PDF' : 'ZIP'}
                         </div>
                         <div>
-                          <p className="font-bold text-sm">{f.name}</p>
-                          <p className="text-xs text-gray-500">{f.size}</p>
+                          <p className={`font-bold text-sm ${isDark ? 'text-slate-200' : 'text-gray-900'}`}>{f.name}</p>
+                          <p className={`text-xs ${textMuted}`}>{f.size}</p>
                         </div>
                       </div>
                       <button 
                         onClick={() => handleDownload(f)} 
-                        className={`px-4 py-2 rounded-lg text-sm font-bold bg-white border shadow-sm hover:shadow-md transition ${isPizza ? 'text-pizza-600 border-pizza-200' : 'text-lemon-600 border-lemon-200'}`}
+                        className={`px-4 py-2 rounded-lg text-sm font-bold border shadow-sm hover:shadow-md transition ${
+                            isDark 
+                             ? 'bg-slate-600 border-slate-500 text-white hover:bg-slate-500'
+                             : (isPizza ? 'bg-white text-pizza-600 border-pizza-200' : 'bg-white text-lemon-600 border-lemon-200')
+                        }`}
                       >
                         Download
                       </button>
@@ -252,7 +272,7 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                  ))}
                </div>
              ) : (
-               <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+               <div className={`text-center py-12 rounded-xl border border-dashed ${isDark ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}>
                  <Lock className="mx-auto text-gray-400 mb-3" size={32} />
                  <p className="text-gray-500 font-medium">Content Locked. Purchase or watch ads to access.</p>
                </div>
@@ -286,12 +306,12 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
           {!isOwned && !pendingRequest && (
             <>
               {/* Buy Card */}
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 relative overflow-hidden">
+              <div className={`rounded-2xl shadow-lg border p-6 relative overflow-hidden ${cardClass}`}>
                 <div className={`absolute top-0 right-0 p-2 opacity-10 ${brandColor}`}>
                    <CheckCircle size={100} />
                 </div>
                 <div className="text-center mb-6 relative z-10">
-                  <p className="text-gray-500 text-sm uppercase font-bold tracking-wider">Premium Access</p>
+                  <p className={`${textMuted} text-sm uppercase font-bold tracking-wider`}>Premium Access</p>
                   <div className={`text-4xl font-black mt-2 ${brandColor}`}>৳{course.price}</div>
                 </div>
                 <button onClick={() => setShowBuyModal(true)} className={`w-full ${btnPrimary} flex items-center justify-center gap-2 relative z-10`}>
@@ -300,23 +320,31 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
               </div>
 
               {/* Ad Unlock Card */}
-              <div className={`rounded-2xl border-2 p-6 transition-all duration-300 ${isPizza ? 'bg-orange-50 border-orange-200 hover:shadow-orange-100' : 'bg-lime-50 border-lime-200 hover:shadow-lime-100'} hover:shadow-xl`}>
+              <div className={`rounded-2xl border-2 p-6 transition-all duration-300 hover:shadow-xl ${
+                isDark 
+                  ? 'bg-slate-800 border-slate-600'
+                  : (isPizza ? 'bg-orange-50 border-orange-200 hover:shadow-orange-100' : 'bg-lime-50 border-lime-200 hover:shadow-lime-100')
+              }`}>
                  <div className="flex items-center justify-between mb-2">
-                   <h3 className={`font-bold ${isPizza ? 'text-orange-800' : 'text-lime-800'}`}>Unlock for Free</h3>
-                   <span className="bg-white px-2 py-1 rounded-md text-xs font-black shadow-sm border">
+                   <h3 className={`font-bold ${
+                     isDark ? 'text-indigo-400' : (isPizza ? 'text-orange-800' : 'text-lime-800')
+                   }`}>Unlock for Free</h3>
+                   <span className={`px-2 py-1 rounded-md text-xs font-black shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white'}`}>
                      {Math.round((adsWatched / course.unlockAdsRequired) * 100)}%
                    </span>
                  </div>
                  
-                 <div className="flex justify-between text-xs text-gray-500 font-bold mb-2 uppercase">
+                 <div className={`flex justify-between text-xs font-bold mb-2 uppercase ${textMuted}`}>
                     <span>Progress</span>
                     <span>{adsWatched} / {course.unlockAdsRequired} Ads</span>
                  </div>
 
-                 <div className="w-full bg-white rounded-full h-4 mb-6 overflow-hidden border border-gray-200 shadow-inner relative">
+                 <div className={`w-full rounded-full h-4 mb-6 overflow-hidden border shadow-inner relative ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
                    {/* Striped Background for bar */}
                    <div 
-                    className={`h-full transition-all duration-500 relative ${isPizza ? 'bg-pizza-500' : 'bg-lemon-500'}`} 
+                    className={`h-full transition-all duration-500 relative ${
+                        isDark ? 'bg-indigo-600' : (isPizza ? 'bg-pizza-500' : 'bg-lemon-500')
+                    }`} 
                     style={{ width: `${Math.min((adsWatched / course.unlockAdsRequired) * 100, 100)}%`}}
                    >
                      <div className="absolute inset-0 bg-white/20" style={{backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)', backgroundSize: '1rem 1rem'}}></div>
@@ -339,7 +367,7 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                    <button 
                     onClick={handleWatchAd}
                     disabled={isWatchingAd}
-                    className={`w-full ${btnSecondary} flex items-center justify-center gap-2 bg-white`}
+                    className={`w-full ${btnSecondary} flex items-center justify-center gap-2 ${isDark ? 'bg-slate-800' : 'bg-white'}`}
                    >
                       {isWatchingAd ? (
                         <Loader2 className="animate-spin" size={18} />
@@ -387,8 +415,10 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
       {/* Buy Modal */}
       {showBuyModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
-           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100">
-              <div className={`p-6 text-white flex justify-between items-start ${isPizza ? 'bg-pizza-600' : 'bg-lemon-600'}`}>
+           <div className={`rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+              <div className={`p-6 text-white flex justify-between items-start ${
+                  isDark ? 'bg-indigo-600' : (isPizza ? 'bg-pizza-600' : 'bg-lemon-600')
+              }`}>
                 <div>
                   <h3 className="text-xl font-bold">Complete Purchase</h3>
                   <p className="text-white/80 text-sm">Send ৳{course.price} to our number.</p>
@@ -397,15 +427,19 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
               </div>
               <div className="p-6 space-y-6 overflow-y-auto max-h-[70vh]">
                 <div>
-                   <label className="block text-xs font-bold uppercase text-gray-400 mb-2">Select Method</label>
+                   <label className={`block text-xs font-bold uppercase mb-2 ${textMuted}`}>Select Method</label>
                    <div className="grid grid-cols-2 gap-3">
                       {['Bkash', 'Nagad'].map(m => (
                         <button 
                           key={m}
                           onClick={() => setPaymentMethod(m as any)}
-                          className={`py-3 rounded-xl font-bold border-2 transition ${paymentMethod === m 
-                            ? (isPizza ? 'border-pizza-500 bg-pizza-50 text-pizza-700' : 'border-lemon-500 bg-lemon-50 text-lemon-700') 
-                            : 'border-gray-100 hover:border-gray-200'}`}
+                          className={`py-3 rounded-xl font-bold border-2 transition ${
+                            paymentMethod === m 
+                              ? (isDark 
+                                  ? 'border-indigo-500 bg-indigo-500/20 text-indigo-400' 
+                                  : (isPizza ? 'border-pizza-500 bg-pizza-50 text-pizza-700' : 'border-lemon-500 bg-lemon-50 text-lemon-700'))
+                              : (isDark ? 'border-slate-700 hover:border-slate-600 text-slate-300' : 'border-gray-100 hover:border-gray-200 text-gray-700')
+                          }`}
                         >
                           {m}
                         </button>
@@ -413,27 +447,31 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                    </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-xl text-center">
-                   <p className="text-sm font-bold text-gray-500 mb-1">Send Money To (Personal)</p>
-                   <p className="text-xl font-mono font-black tracking-wider">01700-000000</p>
+                <div className={`p-4 rounded-xl text-center ${isDark ? 'bg-slate-700/50' : 'bg-gray-50'}`}>
+                   <p className={`text-sm font-bold mb-1 ${textMuted}`}>Send Money To (Personal)</p>
+                   <p className={`text-xl font-mono font-black tracking-wider ${isDark ? 'text-white' : ''}`}>+8801935728557</p>
                 </div>
                 
                 <div className="flex gap-2 justify-center text-sm">
-                   <a href="https://instagram.com/quixoratech" target="_blank" rel="noreferrer" className="flex items-center gap-1 text-pink-600 hover:underline">
+                   <a href="https://instagram.com/quixoratech" target="_blank" rel="noreferrer" className="flex items-center gap-1 text-pink-500 hover:underline">
                       <Instagram size={14} /> @quixoratech
                    </a>
-                   <span className="text-gray-300">|</span>
+                   <span className="text-gray-400">|</span>
                    <a href="https://t.me/King0916ok" target="_blank" rel="noreferrer" className="flex items-center gap-1 text-blue-500 hover:underline">
                       <Send size={14} /> @King0916ok
                    </a>
                 </div>
 
                 <div>
-                   <label className="block text-xs font-bold uppercase text-gray-400 mb-2">Upload Screenshot</label>
-                   <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center hover:bg-gray-50 transition cursor-pointer">
+                   <label className={`block text-xs font-bold uppercase mb-2 ${textMuted}`}>Upload Screenshot</label>
+                   <div className={`relative border-2 border-dashed rounded-xl p-6 text-center transition cursor-pointer ${
+                       isDark 
+                         ? 'border-slate-600 hover:bg-slate-700/50' 
+                         : 'border-gray-300 hover:bg-gray-50'
+                   }`}>
                       <input type="file" onChange={handleFileSelect} className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" />
                       {screenshot ? (
-                        <div className="flex items-center justify-center gap-2 text-green-600 font-bold">
+                        <div className="flex items-center justify-center gap-2 text-green-500 font-bold">
                           <CheckCircle size={18} /> Image Selected
                         </div>
                       ) : (
@@ -446,11 +484,15 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
                 </div>
 
                 <div className="flex gap-3 pt-2">
-                   <button onClick={() => setShowBuyModal(false)} className="flex-1 py-3 font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition">Cancel</button>
+                   <button onClick={() => setShowBuyModal(false)} className={`flex-1 py-3 font-bold rounded-xl transition ${isDark ? 'text-slate-400 hover:bg-slate-700' : 'text-gray-500 hover:bg-gray-100'}`}>Cancel</button>
                    <button 
                     onClick={handleSubmitBuy}
                     disabled={!screenshot || submitting}
-                    className={`flex-1 py-3 font-bold text-white rounded-xl shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700'}`}
+                    className={`flex-1 py-3 font-bold text-white rounded-xl shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+                        isDark 
+                          ? 'bg-indigo-600 hover:bg-indigo-700' 
+                          : (isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700')
+                    }`}
                    >
                      {submitting ? <Loader2 className="animate-spin" size={20} /> : 'Submit Request'}
                    </button>

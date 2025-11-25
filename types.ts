@@ -1,4 +1,4 @@
-export type Theme = 'pizza' | 'lemon';
+export type Theme = 'pizza' | 'lemon' | 'dark';
 export type Role = 'user' | 'admin';
 
 export interface User {

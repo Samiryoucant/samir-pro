@@ -15,7 +15,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, theme, onViewCourse,
   const [search, setSearch] = useState('');
   const [ownedIds, setOwnedIds] = useState<string[]>([]);
 
+  const isDark = theme === 'dark';
   const isPizza = theme === 'pizza';
+  
+  const titleColor = isDark 
+    ? 'text-white' 
+    : (isPizza ? 'text-pizza-800' : 'text-lemon-800');
+  
+  const priceColor = isDark
+    ? 'text-indigo-400'
+    : (isPizza ? 'text-pizza-600' : 'text-lemon-600');
 
   useEffect(() => {
     let all = db.courses.all();
@@ -38,7 +47,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, theme, onViewCourse,
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className={`text-3xl font-black ${isPizza ? 'text-pizza-800' : 'text-lemon-800'}`}>
+          <h2 className={`text-3xl font-black ${titleColor}`}>
             {filter === 'owned' ? 'My Library' : 'Explore Courses'}
           </h2>
           <p className="opacity-70">
@@ -52,15 +61,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, theme, onViewCourse,
             placeholder="Search courses..." 
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50"
-            style={{ '--tw-ring-color': isPizza ? '#f97316' : '#84cc16' } as any}
+            className={`w-full pl-10 pr-4 py-2 rounded-full border focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                isDark 
+                  ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' 
+                  : 'bg-white border-gray-200 text-gray-900'
+            }`}
+            style={{ '--tw-ring-color': isDark ? '#6366f1' : (isPizza ? '#f97316' : '#84cc16') } as any}
           />
           <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
         </div>
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+        <div className={`text-center py-20 rounded-2xl border border-dashed ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-300'}`}>
           <p className="text-gray-400 text-lg">No courses found.</p>
         </div>
       ) : (
@@ -71,7 +84,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, theme, onViewCourse,
               <div 
                 key={course.id} 
                 onClick={() => onViewCourse(course.id)}
-                className={`group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border cursor-pointer ${isPizza ? 'border-pizza-100 hover:border-pizza-300' : 'border-lemon-100 hover:border-lemon-300'}`}
+                className={`group rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border cursor-pointer ${
+                    isDark 
+                      ? 'bg-slate-800 border-slate-700 hover:border-indigo-500/50' 
+                      : (isPizza ? 'bg-white border-pizza-100 hover:border-pizza-300' : 'bg-white border-lemon-100 hover:border-lemon-300')
+                }`}
               >
                 <div className="relative aspect-video overflow-hidden bg-gray-100">
                   <img src={course.thumbnail} alt={course.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
@@ -89,9 +106,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ user, theme, onViewCourse,
                 </div>
                 
                 <div className="p-5">
-                   <h3 className="font-bold text-lg leading-tight mb-2 group-hover:text-current">{course.title}</h3>
+                   <h3 className={`font-bold text-lg leading-tight mb-2 ${isDark ? 'text-white' : 'text-gray-900'} group-hover:text-current`}>{course.title}</h3>
                    <div className="flex items-center justify-between mt-4">
-                     <div className={`font-black text-xl ${isPizza ? 'text-pizza-600' : 'text-lemon-600'}`}>
+                     <div className={`font-black text-xl ${priceColor}`}>
                         {course.price === 0 ? 'FREE' : `৳${course.price}`}
                      </div>
                      <div className="text-xs font-bold text-gray-400 uppercase tracking-wide">

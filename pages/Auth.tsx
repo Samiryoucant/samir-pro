@@ -18,9 +18,26 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, theme }) => {
   
   const { showToast } = useToast();
 
+  const isDark = theme === 'dark';
   const isPizza = theme === 'pizza';
-  const btnClass = `w-full py-3 rounded-lg font-bold text-white shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2 ${isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700'}`;
-  const linkClass = `font-bold cursor-pointer ${isPizza ? 'text-pizza-600' : 'text-lemon-600'}`;
+
+  const btnClass = `w-full py-3 rounded-lg font-bold text-white shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2 ${
+      isDark 
+        ? 'bg-indigo-600 hover:bg-indigo-700' 
+        : (isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700')
+  }`;
+  
+  const linkClass = `font-bold cursor-pointer ${
+      isDark 
+        ? 'text-indigo-400' 
+        : (isPizza ? 'text-pizza-600' : 'text-lemon-600')
+  }`;
+  
+  const inputClass = `w-full px-4 py-3 rounded-lg border focus:outline-none focus:ring-2 focus:ring-opacity-50 transition ${
+      isDark 
+        ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400' 
+        : 'bg-gray-50 border-gray-200'
+  }`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,9 +87,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, theme }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-12 bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
+    <div className={`max-w-md mx-auto mt-12 p-8 rounded-2xl shadow-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-100'}`}>
       <div className="text-center mb-8">
-        <h2 className={`text-3xl font-black mb-2 ${isPizza ? 'text-pizza-700' : 'text-lemon-700'}`}>
+        <h2 className={`text-3xl font-black mb-2 ${
+            isDark 
+              ? 'text-white' 
+              : (isPizza ? 'text-pizza-700' : 'text-lemon-700')
+        }`}>
           {isLogin ? 'Welcome Back!' : 'Join SAMIR PRO'}
         </h2>
         <p className="text-gray-500">
@@ -88,8 +109,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, theme }) => {
               type="text" 
               value={username}
               onChange={e => setUsername(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition"
-              style={{ '--tw-ring-color': isPizza ? '#f97316' : '#84cc16' } as any}
+              className={inputClass}
+              style={{ '--tw-ring-color': isDark ? '#6366f1' : (isPizza ? '#f97316' : '#84cc16') } as any}
               required
             />
           </div>
@@ -101,8 +122,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, theme }) => {
             type="email" 
             value={email}
             onChange={e => setEmail(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition"
-             style={{ '--tw-ring-color': isPizza ? '#f97316' : '#84cc16' } as any}
+            className={inputClass}
+            style={{ '--tw-ring-color': isDark ? '#6366f1' : (isPizza ? '#f97316' : '#84cc16') } as any}
             required
           />
         </div>
@@ -113,8 +134,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, theme }) => {
             type="password" 
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg bg-gray-50 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-opacity-50 transition"
-             style={{ '--tw-ring-color': isPizza ? '#f97316' : '#84cc16' } as any}
+            className={inputClass}
+             style={{ '--tw-ring-color': isDark ? '#6366f1' : (isPizza ? '#f97316' : '#84cc16') } as any}
             required
           />
         </div>

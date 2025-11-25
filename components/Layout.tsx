@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Theme } from '../types';
-import { LogOut, Home, Grid, User as UserIcon, Settings, Sun, Moon, ShoppingBag, Shield } from 'lucide-react';
+import { LogOut, Home, Grid, User as UserIcon, Settings, Sun, Moon, ShoppingBag, Shield, Leaf } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -18,13 +18,25 @@ export const Layout: React.FC<LayoutProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Theme Config
+  const isDark = theme === 'dark';
   const isPizza = theme === 'pizza';
-  const bgMain = isPizza ? 'bg-pizza-50' : 'bg-lemon-50';
-  const textMain = isPizza ? 'text-pizza-900' : 'text-lemon-900';
-  const bgSidebar = isPizza ? 'bg-white border-pizza-200' : 'bg-white border-lemon-200';
-  const btnActive = isPizza ? 'bg-pizza-100 text-pizza-700' : 'bg-lemon-100 text-lemon-700';
-  const btnHover = isPizza ? 'hover:bg-pizza-50' : 'hover:bg-lemon-50';
-  const brandColor = isPizza ? 'text-pizza-600' : 'text-lemon-600';
+  // If not dark and not pizza, it's lemon
+
+  const bgMain = isDark ? 'bg-slate-900' : (isPizza ? 'bg-pizza-50' : 'bg-lemon-50');
+  const textMain = isDark ? 'text-slate-100' : (isPizza ? 'text-pizza-900' : 'text-lemon-900');
+  const bgSidebar = isDark ? 'bg-slate-800 border-slate-700' : (isPizza ? 'bg-white border-pizza-200' : 'bg-white border-lemon-200');
+  
+  const btnActive = isDark 
+    ? 'bg-slate-700 text-white' 
+    : (isPizza ? 'bg-pizza-100 text-pizza-700' : 'bg-lemon-100 text-lemon-700');
+    
+  const btnHover = isDark 
+    ? 'hover:bg-slate-700' 
+    : (isPizza ? 'hover:bg-pizza-50' : 'hover:bg-lemon-50');
+    
+  const brandColor = isDark 
+    ? 'text-indigo-400' 
+    : (isPizza ? 'text-pizza-600' : 'text-lemon-600');
 
   const NavItem = ({ page, icon: Icon, label }: { page: string, icon: any, label: string }) => (
     <button
@@ -39,7 +51,7 @@ export const Layout: React.FC<LayoutProps> = ({
   return (
     <div className={`min-h-screen ${bgMain} ${textMain} transition-colors duration-300 font-sans`}>
       {/* Mobile Header */}
-      <div className={`lg:hidden flex items-center justify-between p-4 bg-white shadow-sm border-b ${isPizza ? 'border-pizza-200' : 'border-lemon-200'}`}>
+      <div className={`lg:hidden flex items-center justify-between p-4 shadow-sm border-b ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white ' + (isPizza ? 'border-pizza-200' : 'border-lemon-200')}`}>
         <div className={`font-bold text-xl ${brandColor}`}>SAMIR PRO</div>
         <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
           <Grid />
@@ -73,19 +85,28 @@ export const Layout: React.FC<LayoutProps> = ({
             </nav>
           </div>
 
-          <div className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-gray-50/50">
+          <div className={`absolute bottom-0 w-full p-4 border-t ${isDark ? 'border-slate-700 bg-slate-800' : 'border-gray-100 bg-gray-50/50'}`}>
              <div className="flex items-center justify-between mb-4 px-2">
                 <span className="text-xs font-semibold uppercase opacity-60">Theme</span>
-                <div className="flex bg-gray-200 rounded-full p-1">
+                <div className={`flex rounded-full p-1 ${isDark ? 'bg-slate-700' : 'bg-gray-200'}`}>
                    <button 
                     onClick={() => onSwitchTheme('pizza')}
-                    className={`p-1.5 rounded-full transition ${isPizza ? 'bg-white shadow-sm text-orange-600' : 'text-gray-500'}`}
+                    className={`p-1.5 rounded-full transition ${isPizza ? 'bg-white shadow-sm text-orange-600' : 'text-gray-400 hover:text-orange-400'}`}
+                    title="Pizza Theme"
                    >
                      <Sun size={14} />
                    </button>
                    <button 
                     onClick={() => onSwitchTheme('lemon')}
-                    className={`p-1.5 rounded-full transition ${!isPizza ? 'bg-white shadow-sm text-lime-600' : 'text-gray-500'}`}
+                    className={`p-1.5 rounded-full transition ${!isPizza && !isDark ? 'bg-white shadow-sm text-lime-600' : 'text-gray-400 hover:text-lime-400'}`}
+                    title="Lemon Theme"
+                   >
+                     <Leaf size={14} />
+                   </button>
+                   <button 
+                    onClick={() => onSwitchTheme('dark')}
+                    className={`p-1.5 rounded-full transition ${isDark ? 'bg-slate-600 shadow-sm text-indigo-400' : 'text-gray-400 hover:text-indigo-400'}`}
+                    title="Dark Theme"
                    >
                      <Moon size={14} />
                    </button>
@@ -94,7 +115,7 @@ export const Layout: React.FC<LayoutProps> = ({
              
              {user ? (
                <div className="flex items-center gap-3 px-2">
-                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isPizza ? 'bg-pizza-500' : 'bg-lemon-500'}`}>
+                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${isDark ? 'bg-indigo-600' : (isPizza ? 'bg-pizza-500' : 'bg-lemon-500')}`}>
                    {user.username.charAt(0).toUpperCase()}
                  </div>
                  <div className="flex-1 min-w-0">
@@ -108,7 +129,11 @@ export const Layout: React.FC<LayoutProps> = ({
              ) : (
                <button 
                 onClick={() => onNavigate('login')}
-                className={`w-full py-2 rounded-lg font-bold text-white shadow-md transition-transform active:scale-95 ${isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700'}`}
+                className={`w-full py-2 rounded-lg font-bold text-white shadow-md transition-transform active:scale-95 ${
+                  isDark 
+                    ? 'bg-indigo-600 hover:bg-indigo-700' 
+                    : (isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700')
+                }`}
                >
                  Login / Register
                </button>
