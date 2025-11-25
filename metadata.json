@@ -1,0 +1,5 @@
+{
+  "name": "SAMIR PRO - Course Marketplace",
+  "description": "A high-fidelity React prototype of the SAMIR PRO Digital Course Marketplace. Features a dual-theme system (Pizza/Lemon), simulated ad-watch unlocking, buy-now flows with admin approval, and a full admin dashboard for managing courses and users. Uses LocalStorage to simulate a persistent database.",
+  "requestFramePermissions": []
+}
