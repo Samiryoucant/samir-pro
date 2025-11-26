@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Theme, Course, CourseFile } from '../types';
 import { db } from '../services/mockDb';
-import { ArrowLeft, Download, Eye, Upload, CheckCircle, Clock, AlertCircle, Lock, Loader2, PlayCircle, Instagram, Send, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Download, Eye, Upload, CheckCircle, Clock, AlertCircle, Lock, Loader2, PlayCircle, Instagram, Send, Image as ImageIcon, Zap } from 'lucide-react';
 import { useToast } from '../components/Toast.tsx';
 
 interface CourseViewProps {
@@ -39,13 +39,13 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
     ? 'text-indigo-400' 
     : (isPizza ? 'text-pizza-600' : 'text-lemon-600');
     
-  const btnPrimary = `px-6 py-3 rounded-xl font-bold text-white shadow-lg transition active:scale-95 ${
+  const btnPrimary = `rounded-xl font-bold text-white shadow-lg transition active:scale-95 ${
     isDark 
       ? 'bg-indigo-600 hover:bg-indigo-700' 
       : (isPizza ? 'bg-pizza-600 hover:bg-pizza-700' : 'bg-lemon-600 hover:bg-lemon-700')
   }`;
   
-  const btnSecondary = `px-6 py-3 rounded-xl font-bold border-2 transition active:scale-95 ${
+  const btnSecondary = `rounded-xl font-bold border-2 transition active:scale-95 ${
     isDark
       ? 'border-slate-600 text-slate-300 hover:bg-slate-700'
       : (isPizza ? 'border-pizza-200 text-pizza-700 hover:bg-pizza-50' : 'border-lemon-200 text-lemon-700 hover:bg-lemon-50')
@@ -144,7 +144,23 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
       downloadedAt: new Date().toISOString()
     });
 
-    if (file.sourceType === 'upload' && file.url.startsWith('blob:')) {
+    if (file.url === '#simulated-large-file') {
+        const blob = new Blob([
+            `This file (${file.name}) was uploaded in a Demo/Static environment.\n` +
+            `Browser storage cannot hold large files (>2MB) persistently without a backend.\n` +
+            `In a real application, this would download the actual file.`
+        ], { type: "text/plain" });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${file.name}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+        showToast("Downloaded placeholder text (Storage Limit Reached)", "success");
+
+    } else if (file.sourceType === 'upload' && file.url.startsWith('data:')) {
       const a = document.createElement("a");
       a.href = file.url;
       a.download = file.name;
@@ -195,6 +211,8 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
   };
 
   if (!course) return <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto text-gray-400" size={32} /></div>;
+
+  const accessProgress = Math.round((adsWatched / course.unlockAdsRequired) * 100);
 
   return (
     <div>
@@ -284,7 +302,7 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
         <div className="space-y-6">
           {/* Contact Support */}
           <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-6 text-white shadow-lg">
-             <h3 className="font-bold mb-4 flex items-center gap-2">Need Help / Buy?</h3>
+             <h3 className="font-bold mb-4 flex items-center gap-2">Need Help?</h3>
              <div className="space-y-3">
                <a href="https://instagram.com/quixoratech" target="_blank" rel="noreferrer" className="flex items-center gap-3 p-3 bg-white/10 rounded-xl hover:bg-white/20 transition">
                  <Instagram size={20} className="text-pink-400"/>
@@ -304,83 +322,68 @@ export const CourseView: React.FC<CourseViewProps> = ({ user, theme, courseId, o
           </div>
 
           {!isOwned && !pendingRequest && (
-            <>
-              {/* Buy Card */}
-              <div className={`rounded-2xl shadow-lg border p-6 relative overflow-hidden ${cardClass}`}>
-                <div className={`absolute top-0 right-0 p-2 opacity-10 ${brandColor}`}>
-                   <CheckCircle size={100} />
-                </div>
-                <div className="text-center mb-6 relative z-10">
-                  <p className={`${textMuted} text-sm uppercase font-bold tracking-wider`}>Premium Access</p>
-                  <div className={`text-4xl font-black mt-2 ${brandColor}`}>৳{course.price}</div>
-                </div>
-                <button onClick={() => setShowBuyModal(true)} className={`w-full ${btnPrimary} flex items-center justify-center gap-2 relative z-10`}>
-                   Buy Now
-                </button>
-              </div>
-
-              {/* Ad Unlock Card */}
-              <div className={`rounded-2xl border-2 p-6 transition-all duration-300 hover:shadow-xl ${
-                isDark 
-                  ? 'bg-slate-800 border-slate-600'
-                  : (isPizza ? 'bg-orange-50 border-orange-200 hover:shadow-orange-100' : 'bg-lime-50 border-lime-200 hover:shadow-lime-100')
-              }`}>
-                 <div className="flex items-center justify-between mb-2">
-                   <h3 className={`font-bold ${
-                     isDark ? 'text-indigo-400' : (isPizza ? 'text-orange-800' : 'text-lime-800')
-                   }`}>Unlock for Free</h3>
-                   <span className={`px-2 py-1 rounded-md text-xs font-black shadow-sm border ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-white'}`}>
-                     {Math.round((adsWatched / course.unlockAdsRequired) * 100)}%
-                   </span>
-                 </div>
-                 
-                 <div className={`flex justify-between text-xs font-bold mb-2 uppercase ${textMuted}`}>
-                    <span>Progress</span>
-                    <span>{adsWatched} / {course.unlockAdsRequired} Ads</span>
-                 </div>
-
-                 <div className={`w-full rounded-full h-4 mb-6 overflow-hidden border shadow-inner relative ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-gray-200'}`}>
-                   {/* Striped Background for bar */}
-                   <div 
-                    className={`h-full transition-all duration-500 relative ${
-                        isDark ? 'bg-indigo-600' : (isPizza ? 'bg-pizza-500' : 'bg-lemon-500')
-                    }`} 
-                    style={{ width: `${Math.min((adsWatched / course.unlockAdsRequired) * 100, 100)}%`}}
-                   >
-                     <div className="absolute inset-0 bg-white/20" style={{backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)', backgroundSize: '1rem 1rem'}}></div>
-                   </div>
-                 </div>
-
-                 {showAdPlayer ? (
-                   <div className="w-full aspect-video bg-black rounded-xl flex flex-col items-center justify-center text-white mb-4 animate-pulse relative overflow-hidden border-2 border-gray-800">
-                      <div className="absolute inset-0 bg-gray-900 opacity-50"></div>
-                      <div className="z-10 flex flex-col items-center">
-                        <div className="w-12 h-12 rounded-full border-2 border-white flex items-center justify-center mb-3">
-                           <PlayCircle size={24} className="text-white" />
-                        </div>
-                        <p className="font-bold text-lg tracking-widest">ADVERTISEMENT</p>
-                        <p className="text-xs opacity-70 mt-1 uppercase tracking-wide">Please wait {adTimer}s</p>
+            /* Unified Access Card */
+            <div className={`rounded-2xl shadow-xl border overflow-hidden ${cardClass}`}>
+                {/* Buy Section */}
+                <div className="p-6 pb-4">
+                  <div className="flex items-end justify-between mb-4">
+                      <div>
+                        <p className={`text-xs font-bold uppercase ${textMuted}`}>One-time Purchase</p>
+                        <div className={`text-3xl font-black ${brandColor}`}>৳{course.price}</div>
                       </div>
-                      <div className="absolute bottom-0 left-0 h-1 bg-red-500 transition-all duration-1000 ease-linear" style={{width: `${(adTimer/15)*100}%`}}></div>
-                   </div>
-                 ) : (
-                   <button 
-                    onClick={handleWatchAd}
-                    disabled={isWatchingAd}
-                    className={`w-full ${btnSecondary} flex items-center justify-center gap-2 ${isDark ? 'bg-slate-800' : 'bg-white'}`}
-                   >
-                      {isWatchingAd ? (
-                        <Loader2 className="animate-spin" size={18} />
-                      ) : (
-                        <><Eye size={18} /> Watch Ad (+1)</>
-                      )}
-                   </button>
-                 )}
-                 <p className="text-xs text-center mt-3 opacity-60">
-                   Watch {course.unlockAdsRequired} ads via Monetag to get full access instantly.
-                 </p>
-              </div>
-            </>
+                      <button 
+                        onClick={() => setShowBuyModal(true)} 
+                        className={`${btnPrimary} py-2 px-6 flex items-center gap-2`}
+                      >
+                        Buy Now
+                      </button>
+                  </div>
+                  
+                  {/* Divider */}
+                  <div className="relative flex items-center py-4">
+                      <div className={`flex-grow border-t ${isDark ? 'border-slate-600' : 'border-gray-200'}`}></div>
+                      <span className={`flex-shrink-0 mx-3 text-xs font-bold uppercase ${textMuted}`}>OR UNLOCK FREE</span>
+                      <div className={`flex-grow border-t ${isDark ? 'border-slate-600' : 'border-gray-200'}`}></div>
+                  </div>
+
+                  {/* Ad Unlock Section */}
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                        <span className={`text-sm font-bold flex items-center gap-1 ${isDark ? 'text-white' : 'text-gray-800'}`}>
+                           <Zap size={14} className="text-yellow-500 fill-yellow-500" /> Watch Ads
+                        </span>
+                        <span className="text-xs font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full dark:bg-slate-700 dark:text-slate-300">
+                           {adsWatched} / {course.unlockAdsRequired}
+                        </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className={`w-full rounded-full h-3 mb-4 overflow-hidden border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-gray-100 border-gray-200'}`}>
+                       <div 
+                        className={`h-full transition-all duration-500 ${isDark ? 'bg-indigo-500' : (isPizza ? 'bg-pizza-500' : 'bg-lemon-500')}`} 
+                        style={{ width: `${Math.min(accessProgress, 100)}%`}}
+                       />
+                    </div>
+
+                    {showAdPlayer ? (
+                       <div className="w-full bg-black rounded-xl p-4 flex flex-col items-center justify-center text-white mb-2 animate-pulse border-2 border-gray-800">
+                          <PlayCircle size={24} className="text-white mb-2" />
+                          <p className="font-bold tracking-widest text-sm">AD PLAYING</p>
+                          <p className="text-xs opacity-70 mt-1 uppercase tracking-wide">Wait {adTimer}s</p>
+                       </div>
+                    ) : (
+                       <button 
+                        onClick={handleWatchAd}
+                        disabled={isWatchingAd}
+                        className={`w-full ${btnSecondary} py-3 flex items-center justify-center gap-2 ${isDark ? 'bg-slate-700 border-slate-600 text-white' : 'bg-gray-50 text-gray-700 border-gray-200'}`}
+                       >
+                          {isWatchingAd ? <Loader2 className="animate-spin" size={18} /> : <Eye size={18} />}
+                          <span>Watch Ad (+1)</span>
+                       </button>
+                    )}
+                  </div>
+                </div>
+            </div>
           )}
 
           {pendingRequest && (

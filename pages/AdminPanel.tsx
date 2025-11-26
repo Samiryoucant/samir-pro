@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { User, Theme, BuyRequest, Course, CourseFile } from '../types';
 import { db } from '../services/mockDb';
-import { Check, X, Trash, Plus, FileText, Video, Folder, Upload, Image as ImageIcon, Search, Eye, Pencil } from 'lucide-react';
+import { Check, X, Trash, Plus, FileText, Video, Folder, Upload, Image as ImageIcon, Search, Eye, Pencil, ExternalLink } from 'lucide-react';
 import { useToast } from '../components/Toast.tsx';
 
 interface AdminPanelProps {
@@ -74,27 +74,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
     if (!file) return;
 
     // Set file details
+    const fileType = file.name.endsWith('.mp4') ? 'video' : file.name.endsWith('.zip') ? 'zip' : 'pdf';
     setNewFile(prev => ({ 
       ...prev, 
       name: file.name,
-      type: file.name.endsWith('.mp4') ? 'video' : file.name.endsWith('.zip') ? 'zip' : 'pdf'
+      type: fileType
     }));
 
-    // Simulate Upload Progress
     setIsUploading(true);
     setUploadProgress(0);
 
-    const steps = 20;
+    // Simulate Upload Progress
+    const steps = 15;
     for(let i = 1; i <= steps; i++) {
-       await new Promise(r => setTimeout(r, 100)); // Simulated network delay
+       await new Promise(r => setTimeout(r, 80)); 
        setUploadProgress(Math.round((i / steps) * 100));
     }
 
-    // For Demo: Create a blob URL for immediate access in this session
-    const blobUrl = URL.createObjectURL(file);
-    setNewFile(prev => ({ ...prev, url: blobUrl, sourceType: 'upload' }));
+    // Logic for Persistence on Static Hosting:
+    // If file is small (< 1MB), try to save as Base64.
+    // If file is large, we must SIMULATE the upload to avoid crashing the browser storage.
+    
+    if (file.size > 1024 * 1024 * 2) { // 2MB Limit for actual storage
+        // Large File Simulation
+        console.warn("File too large for LocalStorage. Simulating upload.");
+        setNewFile(prev => ({ ...prev, url: '#simulated-large-file', sourceType: 'upload' }));
+        showToast("Large file detected. Upload simulated (Demo Mode). Use External Links for real 50MB+ files.", "success");
+    } else {
+        // Small File - Read as Data URL to persist
+        const reader = new FileReader();
+        reader.onload = (x) => {
+            setNewFile(prev => ({ ...prev, url: x.target?.result as string, sourceType: 'upload' }));
+        };
+        reader.readAsDataURL(file);
+    }
+    
     setIsUploading(false);
-    showToast("File uploaded successfully (Session Only)", "success");
   };
 
   const handleAddFileToCourse = () => {
@@ -102,58 +117,58 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
       showToast("File name required", "error");
       return;
     }
+    
+    // Auto-detect link type if user pasted a link but kept toggle on upload
+    let finalSourceType = newFile.sourceType;
+    if (newFile.url.startsWith('http')) {
+        finalSourceType = 'link';
+    }
+
     const file: CourseFile = {
       id: `f-${Date.now()}`,
       name: newFile.name,
       type: newFile.type,
-      size: '15MB', // Mock size as we can't easily read it without full file object persistence in this flow
+      size: '15MB', // Mock size
       url: newFile.url || '#',
-      sourceType: newFile.sourceType
+      sourceType: finalSourceType
     };
     setNewCourse({...newCourse, files: [...(newCourse.files || []), file]});
     setNewFile({name: '', type: 'pdf', url: '', sourceType: 'upload'});
     setUploadProgress(0);
+    showToast("File added to course!", "success");
   };
 
-  const handleSampleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper to read image as Base64 safely
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'banner' | 'sample') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simulate Progress
-    for(let i = 0; i <= 100; i+=20) {
-      setSampleImgUploadProgress(i);
-      await new Promise(r => setTimeout(r, 100));
+    if (file.size > 1024 * 1024) {
+        showToast("Image is large (>1MB). It may fill up browser storage quickly.", "error");
     }
 
     const reader = new FileReader();
     reader.onload = (x) => {
-      const result = x.target?.result as string;
-      setNewCourse(prev => ({
-        ...prev,
-        sampleImages: [...(prev.sampleImages || []), result]
-      }));
-      setSampleImgUploadProgress(0);
+        const result = x.target?.result as string;
+        if (field === 'banner') {
+            setNewCourse(prev => ({ ...prev, banner: result }));
+            setBannerUploadProgress(100);
+        } else {
+            setNewCourse(prev => ({
+                ...prev,
+                sampleImages: [...(prev.sampleImages || []), result]
+            }));
+            setSampleImgUploadProgress(100);
+        }
     };
-    reader.readAsDataURL(file);
-  };
-
-  const handleBannerSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Simulate Progress
-    for(let i = 0; i <= 100; i+=20) {
-      setBannerUploadProgress(i);
-      await new Promise(r => setTimeout(r, 100));
-    }
-
-    const reader = new FileReader();
-    reader.onload = (x) => {
-      const result = x.target?.result as string;
-      setNewCourse(prev => ({ ...prev, banner: result }));
-      setBannerUploadProgress(0);
-    };
-    reader.readAsDataURL(file);
+    
+    // Simulate progress then read
+    if (field === 'banner') setBannerUploadProgress(50);
+    else setSampleImgUploadProgress(50);
+    
+    setTimeout(() => {
+        reader.readAsDataURL(file);
+    }, 500);
   };
 
   const handleSaveCourse = () => {
@@ -175,17 +190,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
       createdAt: isEditing ? (courses.find(c => c.id === editingCourseId)?.createdAt || new Date().toISOString()) : new Date().toISOString()
     };
 
-    if (isEditing && editingCourseId) {
-      db.courses.update(editingCourseId, courseData);
-      showToast("Course updated successfully!", "success");
-    } else {
-      db.courses.create(courseData);
-      showToast("Course created successfully!", "success");
+    try {
+        if (isEditing && editingCourseId) {
+          db.courses.update(editingCourseId, courseData);
+          showToast("Course updated successfully!", "success");
+        } else {
+          db.courses.create(courseData);
+          showToast("Course created successfully!", "success");
+        }
+        setShowAddModal(false);
+        resetForm();
+        refresh();
+    } catch (e) {
+        showToast("Failed to save. Storage might be full.", "error");
     }
-
-    setShowAddModal(false);
-    resetForm();
-    refresh();
   };
 
   const handleDeleteCourse = (id: string) => {
@@ -197,7 +215,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
   };
 
   const handleEditCourse = (course: Course) => {
-    // Deep copy arrays to avoid mutating state directly before save
     setNewCourse({ 
       ...course,
       files: [...course.files],
@@ -420,17 +437,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
                                  <div className={`h-full ${isDark ? 'bg-indigo-500' : (isPizza ? 'bg-pizza-500' : 'bg-lemon-500')} transition-all duration-300`} style={{width: `${uploadProgress}%`}} />
                                </div>
                              )}
-                             {uploadProgress > 0 && !isUploading && (
-                                <div className="text-xs text-green-600 font-bold text-center">Upload Complete</div>
+                             {uploadProgress === 100 && !isUploading && (
+                                <div className="text-xs text-green-600 font-bold text-center">Ready to Add</div>
                              )}
                           </div>
                         ) : (
-                          <input 
-                            placeholder="https://example.com/file.zip"
-                            className={`w-full p-2 border rounded text-sm mb-3 ${inputClass}`}
-                            value={newFile.url}
-                            onChange={e => setNewFile({...newFile, url: e.target.value})}
-                          />
+                          <div className="space-y-2">
+                              <label className="text-xs font-bold text-gray-500 uppercase">External Direct Link</label>
+                              <div className="flex items-center gap-2">
+                                  <ExternalLink size={16} className="text-gray-400" />
+                                  <input 
+                                    placeholder="https://drive.google.com/..."
+                                    className={`w-full p-2 border rounded text-sm ${inputClass}`}
+                                    value={newFile.url}
+                                    onChange={e => setNewFile({...newFile, url: e.target.value})}
+                                  />
+                              </div>
+                          </div>
                         )}
 
                         <div className="flex gap-2 mt-4">
@@ -473,7 +496,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
                                 </div>
                              </div>
                              <div className="flex gap-2">
-                               {f.url && f.url !== '#' && (
+                               {f.url && f.url !== '#' && !f.url.startsWith('#') && (
                                  <a 
                                   href={f.url} 
                                   target="_blank" 
@@ -518,7 +541,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
                         <label className="block text-xs font-bold text-gray-400 uppercase mb-2">Banner Image (Optional)</label>
                         <div className="mb-4">
                            <div className={`relative border-2 border-dashed rounded-lg p-6 text-center transition cursor-pointer group mb-2 ${isDark ? 'border-slate-500 hover:bg-slate-700' : 'border-gray-300 hover:bg-white'}`}>
-                              <input type="file" accept="image/*" onChange={handleBannerSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'banner')} className="absolute inset-0 opacity-0 cursor-pointer" />
                               <div className="pointer-events-none group-hover:scale-105 transition-transform">
                                 <Upload className="mx-auto text-gray-400 mb-2" />
                                 <p className="text-sm font-bold text-gray-500">Upload Banner Image</p>
@@ -559,7 +582,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ user, theme, subPage, on
                               </div>
                             ))}
                             <div className={`relative aspect-square border-2 border-dashed rounded-lg flex flex-col items-center justify-center text-gray-400 transition cursor-pointer ${isDark ? 'bg-slate-700/50 border-slate-600 hover:bg-slate-700' : 'bg-gray-50 border-gray-300 hover:bg-white'}`}>
-                               <input type="file" accept="image/*" onChange={handleSampleImageSelect} className="absolute inset-0 opacity-0 cursor-pointer" />
+                               <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'sample')} className="absolute inset-0 opacity-0 cursor-pointer" />
                                <ImageIcon size={24} className="mb-1"/>
                                <span className="text-xs font-bold">Add</span>
                             </div>
